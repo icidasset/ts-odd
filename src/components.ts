@@ -1,3 +1,5 @@
+import type { FileSystem } from "@wnfs-wg/nest"
+
 import * as Account from "./components/account/implementation.js"
 import * as Agent from "./components/agent/implementation.js"
 import * as Authority from "./components/authority/implementation.js"
@@ -8,8 +10,6 @@ import * as DNS from "./components/dns/implementation.js"
 import * as Identifier from "./components/identifier/implementation.js"
 import * as Manners from "./components/manners/implementation.js"
 import * as Storage from "./components/storage/implementation.js"
-
-import { FileSystem } from "./fs/class.js"
 
 ////////////////
 // COMPONENTS //

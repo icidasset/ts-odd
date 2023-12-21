@@ -1,4 +1,4 @@
-import { AppInfo } from "./appInfo.js"
+import type { AppInfo } from "@wnfs-wg/nest"
 import { isString } from "./common/type-checks.js"
 
 ///////////////////

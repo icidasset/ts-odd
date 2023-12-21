@@ -19,27 +19,14 @@
   "exports": {
     ".": "./lib/index.js",
     "./package.json": "./package.json",
-    "./lib/*": [
-      "./lib/*.js",
-      "./lib/*",
-      "./lib/*/index.js"
-    ],
-    "./*": [
-      "./lib/*.js",
-      "./lib/*",
-      "./lib/*/index.js",
-      "./*"
-    ]
+    "./lib/*": ["./lib/*.js", "./lib/*", "./lib/*/index.js"],
+    "./*": ["./lib/*.js", "./lib/*", "./lib/*/index.js", "./*"]
   },
   "types": "lib/index.d.ts",
   "typesVersions": {
     "*": {
-      "lib/index.d.ts": [
-        "lib/index.d.ts"
-      ],
-      "*": [
-        "lib/*"
-      ]
+      "lib/index.d.ts": ["lib/index.d.ts"],
+      "*": ["lib/*"]
     }
   },
   "files": [
@@ -85,19 +72,16 @@
     "@ipld/dag-cbor": "^9.0.5",
     "@ipld/dag-pb": "^4.0.5",
     "@ucans/core": "^0.12.0",
+    "@wnfs-wg/nest": "^0.2.0",
     "debounce-promise": "^3.1.2",
     "emittery": "^1.0.1",
     "interface-blockstore": "^5.2.6",
-    "ipfs-unixfs": "^11.1.0",
-    "ipfs-unixfs-exporter": "^13.2.1",
-    "ipfs-unixfs-importer": "^15.2.1",
     "iso-base": "^2.0.1",
-    "iso-did": "^1.3.3",
+    "iso-did": "^1.5.0",
     "iso-signatures": "^0.1.10",
     "it-all": "^3.0.3",
     "multiformats": "^12.1.1",
-    "uint8arrays": "^4.0.6",
-    "wnfs": "0.1.27"
+    "uint8arrays": "^4.0.6"
   },
   "devDependencies": {
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",

@@ -1,3 +1,4 @@
+import { FileSystem, FileSystemOptions, Modification } from "@wnfs-wg/nest"
 import { CID } from "multiformats/cid"
 
 import type { Cabinet } from "./repositories/cabinet.js"
@@ -5,10 +6,9 @@ import type { Cabinet } from "./repositories/cabinet.js"
 import * as Path from "./path/index.js"
 import * as CIDLog from "./repositories/cid-log.js"
 
+import { FileSystemCarrier } from "./common/file-system.js"
 import { Maybe } from "./common/index.js"
-import { Clerk, Identifier, Storage } from "./components.js"
-import { FileSystem } from "./fs/class.js"
-import { Dependencies, FileSystemCarrier } from "./fs/types.js"
+import { Clerk, Depot, Identifier, Manners, Storage } from "./components.js"
 import { Inventory } from "./inventory.js"
 import { Names } from "./repositories/names.js"
 
@@ -22,9 +22,11 @@ import { Names } from "./repositories/names.js"
 export async function loadFileSystem(args: {
   cabinet: Cabinet
   carrier: FileSystemCarrier
-  dependencies: Dependencies<FileSystem> & {
+  dependencies: {
     clerk: Clerk.Implementation
+    depot: Depot.Implementation
     identifier: Identifier.Implementation
+    manners: Manners.Implementation<FileSystem>
     storage: Storage.Implementation
   }
   names: Names
@@ -57,9 +59,11 @@ export async function loadFileSystem(args: {
 async function loadExisting(args: {
   cabinet: Cabinet
   carrier: FileSystemCarrier
-  dependencies: Dependencies<FileSystem> & {
+  dependencies: {
     clerk: Clerk.Implementation
+    depot: Depot.Implementation
     identifier: Identifier.Implementation
+    manners: Manners.Implementation<FileSystem>
     storage: Storage.Implementation
   }
   did: string
@@ -104,18 +108,23 @@ async function loadExisting(args: {
 
   // File system class instance
   const inventory = new Inventory(clerk, cabinet)
-  const updateDataRoot = carrier.dataRootUpdater
 
   await manners.fileSystem.hooks.beforeLoadExisting(cid, depot)
 
   const fs = await FileSystem.fromCID(
     cid,
-    { cidLog, dependencies, did, inventory, updateDataRoot }
+    options({
+      depot,
+      did,
+      inventory,
+    })
   )
+
+  bindEvents({ carrier, fs, did, inventory })
 
   // Mount private nodes
   await Promise.all(
-    (cabinet.accessKeys[fs.did] || []).map(async a => {
+    (cabinet.accessKeys[did] || []).map(async a => {
       return fs.mountPrivateNode({
         path: Path.removePartition(a.path),
         capsuleKey: a.key,
@@ -131,9 +140,11 @@ async function loadExisting(args: {
 async function createNew(args: {
   cabinet: Cabinet
   carrier: FileSystemCarrier
-  dependencies: Dependencies<FileSystem> & {
+  dependencies: {
     clerk: Clerk.Implementation
+    depot: Depot.Implementation
     identifier: Identifier.Implementation
+    manners: Manners.Implementation<FileSystem>
     storage: Storage.Implementation
   }
   didName: string
@@ -162,23 +173,24 @@ async function createNew(args: {
 
   // Create new FileSystem instance
   const inventory = new Inventory(clerk, cabinet)
-  const updateDataRoot = carrier.dataRootUpdater
 
   await manners.fileSystem.hooks.beforeLoadNew(depot)
 
-  const fs = await FileSystem.empty({
-    cidLog,
-    dependencies,
-    did,
-    inventory,
-    updateDataRoot,
-  })
+  const fs = await FileSystem.create(
+    options({
+      depot,
+      did,
+      inventory,
+    })
+  )
+
+  bindEvents({ carrier, fs, did, inventory })
 
   const maybeMount = await manners.fileSystem.hooks.afterLoadNew(fs, depot)
 
   if (maybeMount) {
     await cabinet.addAccessKey({
-      did: fs.did,
+      did: did,
       key: maybeMount.capsuleKey,
       path: Path.combine(Path.directory("private"), maybeMount.path),
     })
@@ -191,4 +203,50 @@ async function createNew(args: {
 
   // Fin
   return fs
+}
+
+function options({ depot, did, inventory }: {
+  depot: Depot.Implementation
+  did: string
+  inventory: Inventory
+}): FileSystemOptions {
+  const blockstore = depot.blockstore
+
+  const onCommit = async (changes: Modification[]): Promise<{ commit: boolean }> => {
+    const proofs = await Promise.all(changes.map(change => {
+      return inventory.lookupFileSystemTicket(
+        change.path,
+        did
+      )
+    }))
+
+    return { commit: proofs.every(a => a !== null) }
+  }
+
+  return {
+    blockstore,
+    onCommit,
+  }
+}
+
+function bindEvents({ carrier, did, fs, inventory }: {
+  did: string
+  fs: FileSystem
+  inventory: Inventory
+  carrier: FileSystemCarrier
+}): void {
+  fs.on("publish", async ({ dataRoot, modifications }: { dataRoot: CID; modifications: Modification[] }) => {
+    const proofs = await Promise.all(modifications.map(async mod => {
+      const ticket = await inventory.lookupFileSystemTicket(
+        mod.path,
+        did
+      )
+
+      return ticket ? [ticket] : []
+    }))
+
+    if (carrier.dataRootUpdater) {
+      await carrier.dataRootUpdater(dataRoot, proofs.flat(1))
+    }
+  })
 }

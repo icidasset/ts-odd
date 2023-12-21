@@ -22,7 +22,9 @@ import * as Path from "./path/index.js"
 import * as Cabinet from "./repositories/cabinet.js"
 import * as Names from "./repositories/names.js"
 
+import { FileSystem } from "@wnfs-wg/nest"
 import { FileSystemQuery, Query } from "./authority/query.js"
+import { FileSystemCarrier } from "./common/file-system.js"
 import { Account } from "./components.js"
 import { Components } from "./components.js"
 import { AnnexParentType } from "./components/account/implementation.js"
@@ -31,21 +33,17 @@ import { Configuration, namespace } from "./configuration.js"
 import { createEmitter } from "./events/emitter.js"
 import { ListenTo, listenTo } from "./events/listen.js"
 import { loadFileSystem } from "./fileSystem.js"
-import { FileSystem } from "./fs/class.js"
-import { addSampleData } from "./fs/data/sample.js"
-import { FileSystemCarrier } from "./fs/types.js"
 import { Inventory } from "./inventory.js"
 
 ////////////////
 // RE-EXPORTS //
 ////////////////
 
-export * from "./appInfo.js"
+export * from "@wnfs-wg/nest"
 export * from "./common/types.js"
 export * from "./common/version.js"
 export * from "./components.js"
 export * from "./configuration.js"
-export * from "./fs/types.js"
 
 export * as authority from "./authority/query.js"
 export * as channel from "./channel.js"
@@ -55,9 +53,6 @@ export * as path from "./path/index.js"
 export { CID, decodeCID, encodeCID } from "./common/cid.js"
 export { Components } from "./components.js"
 export { RequestOptions } from "./components/authority/implementation.js"
-export { CodecIdentifier } from "./dag/codecs.js"
-export { FileSystem } from "./fs/class.js"
-export { TransactionContext } from "./fs/transaction.js"
 export { Inventory } from "./inventory.js"
 export { Names } from "./repositories/names.js"
 export { Ticket } from "./ticket/types.js"
@@ -166,11 +161,6 @@ export type AuthorityCategory<ProvideResponse, RequestResponse> = {
  * @group Program
  */
 export type FileSystemCategory = {
-  /**
-   * Add some sample data to a file system.
-   */
-  addSampleData: (fs: FileSystem) => Promise<void>
-
   /**
    * Load a file system.
    *
@@ -357,6 +347,7 @@ export async function program<
         await cabinet.addTickets("file_system", fileSystemTickets, clerk.tickets.cid)
         await cabinet.addAccessKeys(response.accessKeys)
 
+        // HEAD
         const identifierAccountTickets = accountTickets.filter(
           t => t.audience === identifier.did()
         )
@@ -372,6 +363,8 @@ export async function program<
           await cabinet.addTicket("agent", agentDelegation, clerk.tickets.cid)
         }
 
+        //
+        // 4633bb8 (feat: use @wnfs-wg/nest)
         await names.add(
           Object.entries(response.resolvedNames).map(([k, v]) => {
             return { name: k, subject: v }
@@ -392,7 +385,6 @@ export async function program<
 
   // Other categories
   const fileSystemCategory: FileSystemCategory = {
-    addSampleData: (fs: FileSystem) => addSampleData(fs),
     load: async (params: FileSystemCarrier) => {
       return loadFileSystem({ cabinet, names, carrier: params, dependencies: components })
     },

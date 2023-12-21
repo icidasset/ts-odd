@@ -1,9 +1,9 @@
+import type { FileSystem } from "@wnfs-wg/nest"
 import type { Implementation } from "./implementation.js"
 
 import { Configuration } from "../../configuration.js"
 import { EventEmitter, createEmitter } from "../../events/emitter.js"
 import * as Events from "../../events/program.js"
-import { FileSystem } from "../../fs/class.js"
 import * as Path from "../../path/index.js"
 
 ////////
@@ -37,13 +37,13 @@ export function onlineBehaviour<FS>(
   globalThis.addEventListener("offline", async () => {
     online = false
     log("🌍 Program is offline")
-    programEmitter.emit("offline", void null)
+    await programEmitter.emit("offline", void null)
   })
 
   globalThis.addEventListener("online", async () => {
     online = true
     log("🌍 Program is online")
-    programEmitter.emit("online", void null)
+    await programEmitter.emit("online", void null)
   })
 
   return () => online

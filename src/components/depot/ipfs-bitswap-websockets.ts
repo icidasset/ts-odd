@@ -11,12 +11,9 @@ import { Libp2p, createLibp2p } from "libp2p"
 import { pingService } from "libp2p/ping"
 
 import { CID } from "multiformats/cid"
-import { sha256 } from "multiformats/hashes/sha2"
 
 import { Maybe } from "../../common/types.js"
 import { Manners, Storage } from "../../components.js"
-import * as Codecs from "../../dag/codecs.js"
-import { CodecIdentifier } from "../../dag/codecs.js"
 import * as Path from "../../path/index.js"
 import { Implementation } from "./implementation.js"
 
@@ -64,7 +61,7 @@ export async function createTransport<FS>(
 
   // Bitswap
   const bitswap = createBitswap(libp2p, blockstore)
-  bitswap.start()
+  await bitswap.start()
 
   // Connect to peers
   async function listPeers(): Promise<Multiaddr[]> {
@@ -124,7 +121,33 @@ export type ImplementationOptions<FS> = {
 export async function implementation<FS>(
   { blockstoreName, gatewayUrl, manners, peersUrl, storage }: ImplementationOptions<FS>
 ): Promise<Implementation> {
-  const blockstore = new LevelBlockstore(blockstoreName, { prefix: "" })
+  const levelBlockstore = new LevelBlockstore(blockstoreName, { prefix: "" })
+
+  const blockstore: Blockstore = {
+    delete: levelBlockstore.delete,
+    deleteMany: levelBlockstore.deleteMany,
+    getAll: levelBlockstore.getAll,
+    getMany: levelBlockstore.getMany,
+    has: levelBlockstore.has,
+    put: levelBlockstore.put,
+    putMany: levelBlockstore.putMany,
+
+    async get(key: CID): Promise<Uint8Array> {
+      if (await levelBlockstore.has(key)) return levelBlockstore.get(key)
+
+      // TODO: Can we use CAR files to get a bunch of blocks at once?
+      return fetch(`${gatewayUrl.replace(/\/+$/, "")}/ipfs/${key.toString()}?format=raw`)
+        .then(r => {
+          if (r.ok) return r.arrayBuffer()
+          throw new Error("Failed to fetch block from gateway")
+        })
+        .then(r => new Uint8Array(r))
+        .then(async r => {
+          await blockstore.put(key, r)
+          return r
+        })
+    },
+  }
 
   // Transport
   // ---------
@@ -140,36 +163,6 @@ export async function implementation<FS>(
   // --------------
   return {
     blockstore,
-
-    // GET
-
-    getBlock: async (cid: CID): Promise<Uint8Array> => {
-      if (await blockstore.has(cid)) return blockstore.get(cid)
-
-      // TODO: Can we use CAR files to get a bunch of blocks at once?
-      return fetch(`${gatewayUrl.replace(/\/+$/, "")}/ipfs/${cid.toString()}?format=raw`)
-        .then(r => {
-          if (r.ok) return r.arrayBuffer()
-          throw new Error("Failed to fetch block from gateway")
-        })
-        .then(r => new Uint8Array(r))
-        .then(async r => {
-          await blockstore.put(cid, r)
-          return r
-        })
-    },
-
-    // PUT
-
-    putBlock: async (data: Uint8Array, codecId: CodecIdentifier): Promise<CID> => {
-      const codec = Codecs.getByIdentifier(codecId)
-      const multihash = await sha256.digest(data)
-      const cid = CID.createV1(codec.code, multihash)
-
-      await blockstore.put(cid, data)
-
-      return cid
-    },
 
     // FLUSH
 

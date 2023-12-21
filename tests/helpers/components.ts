@@ -1,6 +1,6 @@
+import { FileSystem } from "@wnfs-wg/nest"
 import { MemoryBlockstore } from "blockstore-core/memory"
 import { CID } from "multiformats"
-import { sha256 } from "multiformats/hashes/sha2"
 
 import * as LocalAccount from "../../src/components/account/local.js"
 import * as WebCryptoAgent from "../../src/components/agent/web-crypto-api.js"
@@ -10,8 +10,6 @@ import * as DOH from "../../src/components/dns/dns-over-https/cloudflare-google.
 import * as WebCryptoIdentifier from "../../src/components/identifier/web-crypto-api.js"
 import * as ProperManners from "../../src/components/manners/default.js"
 import * as MemoryStorage from "../../src/components/storage/memory.js"
-
-import * as Codecs from "../../src/dag/codecs.js"
 
 import { ChannelOptions } from "../../src/channel.js"
 import {
@@ -28,8 +26,6 @@ import {
   Storage,
 } from "../../src/components.js"
 import { Configuration } from "../../src/configuration.js"
-import { CodecIdentifier } from "../../src/dag/codecs.js"
-import { FileSystem } from "../../src/fs/class.js"
 import { Ticket } from "../../src/ticket/types.js"
 import { Storage as InMemoryStorage } from "./localforage/in-memory-storage.js"
 
@@ -50,21 +46,6 @@ const memoryBlockstore = new MemoryBlockstore()
 
 const depot: Depot.Implementation = {
   blockstore: memoryBlockstore,
-
-  getBlock: async (cid: CID) => {
-    return memoryBlockstore.get(cid)
-  },
-
-  putBlock: async (data: Uint8Array, codecId: CodecIdentifier) => {
-    const codec = Codecs.getByIdentifier(codecId)
-    const multihash = await sha256.digest(data)
-    const cid = CID.createV1(codec.code, multihash)
-
-    await memoryBlockstore.put(cid, data)
-
-    return cid
-  },
-
   flush: async (dataRoot: CID, proofs: Ticket[]) => {},
 }
 
