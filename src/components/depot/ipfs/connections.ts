@@ -1,6 +1,6 @@
 import { Multiaddr } from "@multiformats/multiaddr"
 import { Libp2p } from "libp2p"
-import { PingService } from "libp2p/ping"
+import { PingService } from "@libp2p/ping"
 
 import { Manners } from "../../../components.js"
 

@@ -8,7 +8,7 @@ import { LevelBlockstore } from "blockstore-level"
 import { Blockstore } from "interface-blockstore"
 import { Bitswap, createBitswap } from "ipfs-bitswap"
 import { Libp2p, createLibp2p } from "libp2p"
-import { pingService } from "libp2p/ping"
+import { ping } from "@libp2p/ping"
 
 import { CID } from "multiformats/cid"
 
@@ -43,11 +43,7 @@ export async function createTransport<FS>(
       webTransport(),
     ],
     services: {
-      ping: pingService({
-        maxInboundStreams: 100,
-        maxOutboundStreams: 100,
-        runOnTransientConnection: false,
-      }),
+      ping: ping()
     },
     connectionGater: {
       denyDialMultiaddr: async (multiAddr: Multiaddr) => {

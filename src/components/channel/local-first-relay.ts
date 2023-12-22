@@ -1,4 +1,4 @@
-import { Client } from "@localfirst/relay-client"
+import { Client } from "@localfirst/relay/Client.js"
 import * as Uint8Arrays from "uint8arrays"
 
 import { sha256 } from "multiformats/hashes/sha2"
@@ -24,21 +24,18 @@ export async function establish<FS>(
 
   return new Promise((resolve, reject) => {
     let s: WebSocket
-    let client: Client
 
     const channel = {
       close: () => client.disconnectServer(),
       send: (data: ChannelData) => s.send(data),
     }
 
-    client = new Client({ userName: didHash, url })
+    const client = new Client({ peerId: didHash, url })
       .join(topic)
-      .on("peer.connect", ({ socket }) => {
-        s = socket as WebSocket
-
+      .on("peer-connect", ({ socket }) => {
         // listen for messages
-        socket.addEventListener("message", (message: MessageEvent) => {
-          options.onmessage(message, channel)
+        socket.addEventListener("message", (event) => {
+          options.onmessage(event as any as MessageEvent, channel)
         })
 
         // channel established
