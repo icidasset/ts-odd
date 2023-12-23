@@ -101,9 +101,7 @@ async function loadExisting(args: {
     await cidLog.add([cid])
     manners.log("📓 DNSLink is newer:", cid.toString())
 
-    // TODO: We could test the filesystem version at this DNSLink at this point to figure out whether to continue locally.
-    // However, that needs a plan for reconciling local changes back into the DNSLink, once migrated. And a plan for migrating changes
-    // that are only stored locally.
+    // TODO: We could test the filesystem version at this DNSLink at this point to figure out whether to continue locally. However, that needs a plan for reconciling local changes back into the DNSLink, once migrated. And a plan for migrating changes that are only stored locally.
   }
 
   // File system class instance
@@ -120,7 +118,7 @@ async function loadExisting(args: {
     })
   )
 
-  bindEvents({ carrier, fs, did, inventory })
+  bindEvents({ carrier, cidLog, fs, did, inventory })
 
   // Mount private nodes
   await Promise.all(
@@ -184,7 +182,7 @@ async function createNew(args: {
     })
   )
 
-  bindEvents({ carrier, fs, did, inventory })
+  bindEvents({ carrier, cidLog, fs, did, inventory })
 
   const maybeMount = await manners.fileSystem.hooks.afterLoadNew(fs, depot)
 
@@ -229,12 +227,19 @@ function options({ depot, did, inventory }: {
   }
 }
 
-function bindEvents({ carrier, did, fs, inventory }: {
+function bindEvents({ carrier, cidLog, did, fs, inventory }: {
+  cidLog: CIDLog.CIDLog
   did: string
   fs: FileSystem
   inventory: Inventory
   carrier: FileSystemCarrier
 }): void {
+  // Commit
+  fs.on("commit", async ({ dataRoot }) => {
+    await cidLog.add(dataRoot)
+  })
+
+  // Publish
   fs.on("publish", async ({ dataRoot, modifications }: { dataRoot: CID; modifications: Modification[] }) => {
     const proofs = await Promise.all(modifications.map(async mod => {
       const ticket = await inventory.lookupFileSystemTicket(
