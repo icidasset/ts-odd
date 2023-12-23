@@ -51,6 +51,7 @@ export * as events from "./events/index.js"
 export * as path from "./path/index.js"
 
 export { CID, decodeCID, encodeCID } from "./common/cid.js"
+export { FileSystemCarrier } from "./common/file-system.js"
 export { Components } from "./components.js"
 export { RequestOptions } from "./components/authority/implementation.js"
 export { Inventory } from "./inventory.js"
