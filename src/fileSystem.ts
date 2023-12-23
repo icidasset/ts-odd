@@ -118,7 +118,7 @@ async function loadExisting(args: {
     })
   )
 
-  bindEvents({ carrier, cidLog, fs, did, inventory })
+  bindEvents({ carrier, cidLog, depot, did, fs, inventory })
 
   // Mount private nodes
   await Promise.all(
@@ -182,7 +182,7 @@ async function createNew(args: {
     })
   )
 
-  bindEvents({ carrier, cidLog, fs, did, inventory })
+  bindEvents({ carrier, cidLog, depot, did, fs, inventory })
 
   const maybeMount = await manners.fileSystem.hooks.afterLoadNew(fs, depot)
 
@@ -227,8 +227,9 @@ function options({ depot, did, inventory }: {
   }
 }
 
-function bindEvents({ carrier, cidLog, did, fs, inventory }: {
+function bindEvents({ carrier, cidLog, depot, did, fs, inventory }: {
   cidLog: CIDLog.CIDLog
+  depot: Depot.Implementation
   did: string
   fs: FileSystem
   inventory: Inventory
@@ -248,10 +249,12 @@ function bindEvents({ carrier, cidLog, did, fs, inventory }: {
       )
 
       return ticket ? [ticket] : []
-    }))
+    })).then(a => a.flat(1))
+
+    await depot.flush(dataRoot, proofs, inventory)
 
     if (carrier.dataRootUpdater) {
-      await carrier.dataRootUpdater(dataRoot, proofs.flat(1))
+      await carrier.dataRootUpdater(dataRoot, proofs)
     }
   })
 }
