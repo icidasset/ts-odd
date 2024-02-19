@@ -2,9 +2,6 @@
 
 [![NPM](https://img.shields.io/npm/v/@oddjs/odd)](https://www.npmjs.com/package/@oddjs/odd)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/oddsdk/ts-odd/blob/main/LICENSE)
-[![Built by FISSION](https://img.shields.io/badge/⌘-Built_by_FISSION-purple.svg)](https://fission.codes)
-[![Discord](https://img.shields.io/discord/478735028319158273.svg)](https://discord.gg/zAQBDEq)
-[![Discourse](https://img.shields.io/discourse/https/talk.fission.codes/topics)](https://talk.fission.codes)
 
 The ODD SDK empowers developers to build fully distributed web applications without needing a complex back-end. The SDK provides:
 
@@ -19,22 +16,8 @@ ODD applications work offline and store data encrypted for the user by leveragin
 
 The `ts-odd` package is published on yarn, pnpm and npm as `@oddjs/odd`:
 
-### npm
-
 ```bash
 npm install @oddjs/odd
-```
-
-### pnpm
-
-```bash
-pnpm install @oddjs/odd
-```
-
-### yarn
-
-```bash
-yarn add @oddjs/odd
 ```
 
 # Getting started
@@ -165,98 +148,4 @@ const fs = session.fs
 
 ## Working with the file system
 
-The Webnative File System (WNFS) is a file system built on top of [IPLD](https://ipld.io/). It supports operations similar to your macOS, Windows, or Linux desktop file system. It consists of a public and private branch: The public branch is "live" and publicly accessible on the Internet. The private branch is encrypted so that only the owner can see the contents. Read more about it [here](https://github.com/wnfs-wg).
-
-```ts
-const { Branch } = odd.path
-
-// List the user's private files
-await fs.ls(
-  odd.path.directory(Branch.Private)
-)
-
-// Create a sub directory and add some content
-const contentPath = odd.file(
-  Branch.Private,
-  "Sub Directory",
-  "hello.txt"
-)
-
-await fs.write(
-  contentPath,
-  new TextEncoder().encode("👋") // Uint8Array
-)
-
-// Persist changes and announce them to your other devices
-await fs.publish()
-
-// Read the file
-const content = new TextDecoder().decode(
-  await fs.read(contentPath)
-)
-```
-
-That's it, you have successfully created an ODD app! 🚀
-
-## POSIX Interface
-
-WNFS exposes a familiar POSIX-style interface:
-
-- `exists`: check if a file or directory exists
-- `ls`: list a directory
-- `mkdir`: create a directory
-- `mv`: move a file or directory
-- `read`: read from a file
-- `rm`: remove a file or directory
-- `write`: write to a file
-
-## Versioning
-
-Each file and directory has a `history` property, which you can use to get an earlier version of that item. We use the `delta` variable as the order index. Primarily because the timestamps can be slightly out of sequence, due to device inconsistencies.
-
-```ts
-const file = await fs.get(odd.path.file("private", "Blog Posts", "article.md"))
-
-file.history.list()
-// { delta: -1, timestamp: 1606236743 }
-// { delta: -2, timestamp: 1606236532 }
-
-// Get the previous version
-file.history.back()
-
-// Go back two versions
-const delta = -2
-file.history.back(delta)
-
-// Get the first version (ie. delta -2)
-// by providing a timestamp
-file.history.prior(1606236743)
-```
-
-## Sharing Private Data
-
-[https://docs.odd.dev/sharing-private-data](https://docs.odd.dev/sharing-private-data)
-
-## Migration
-
-Some versions of the ODD SDK require apps to migrate their codebase to address breaking changes. Please see our [migration guide](https://docs.odd.dev/developers/odd/migration) for help migrating your apps to the latest ODD SDK version.
-
-## Debugging
-
-Debugging mode can be enable by setting `debug` to `true` in your configuration object that you pass to your `Program`. By default this will add your programs to the global context object (eg. `window`) under `globalThis.__odd.programs` (can be disabled, see API docs).
-
-```ts
-const appInfo = { creator: "Nullsoft", name: "Winamp" }
-
-await odd.program({
-  namespace: appInfo,
-  debug: true,
-})
-
-// Automatically exposed Program in debug mode
-const program = globalThis.__odd[odd.namespace(appInfo)] // namespace: "Nullsoft/Winamp"
-```
-
-## Roadmap
-
-- [Starmap](https://starmap.site/roadmap/github.com/fission-codes/Fission-Starmap/issues/68#view=simple)
+See: https://github.com/wnfs-wg/nest/

@@ -1,4 +1,4 @@
-import { LevelBlockstore } from "blockstore-level"
+import { IDBBlockstore } from "blockstore-idb"
 import { CID } from "multiformats/cid"
 
 import { Ticket } from "../../ticket/types.js"
@@ -13,7 +13,7 @@ export type ImplementationOptions = {
 export async function implementation(
   { blockstoreName }: ImplementationOptions
 ): Promise<Implementation> {
-  const blockstore = new LevelBlockstore(blockstoreName, { prefix: "" })
+  const blockstore = new IDBBlockstore(blockstoreName)
 
   // Implementation
   // --------------

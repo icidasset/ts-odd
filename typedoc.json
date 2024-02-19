@@ -1,13 +1,7 @@
 {
   "entryPointStrategy": "expand",
-  "entryPoints": [
-    "./src/index.ts",
-    "./src/compositions/fission.ts",
-    "./src/compositions/local.ts"
-  ],
-  "exclude": [
-    "**/*.test.ts"
-  ],
+  "entryPoints": ["./src/index.ts", "./src/compositions/local.ts"],
+  "exclude": ["**/*.test.ts"],
   "name": "ODD SDK",
   "out": "docs",
   "theme": "default",
@@ -33,7 +27,5 @@
   "excludeNotDocumented": false,
   "excludeInternal": true,
   "excludePrivate": true,
-  "plugin": [
-    "typedoc-plugin-rename-defaults"
-  ]
+  "plugin": ["typedoc-plugin-rename-defaults"]
 }

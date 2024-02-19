@@ -34,8 +34,8 @@ export async function establish<FS>(
       .join(topic)
       .on("peer-connect", ({ socket }) => {
         // listen for messages
-        socket.addEventListener("message", (event) => {
-          options.onmessage(event as any as MessageEvent, channel)
+        socket.addEventListener("message", (event: MessageEvent) => {
+          options.onmessage(event, channel)
         })
 
         // channel established
